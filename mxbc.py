@@ -10,7 +10,7 @@ tasks_num = 100  # 运行 100 次
 threads_num = 30 # 最大线程数  30 个
 
 # ----自定义变量区----
-token = 'o0GLKvxCGdZXB6WXI2HpBR1aU7iA'
+token = ''
 round = '13:00'
 secretword = '年度重磅 新品免单'
 
