@@ -1,4 +1,4 @@
-dlurl = '192.168.1.45:9999/open/proxy?token=lxg666'
+dlurl = ''
 
 print("""
 v2014.07.06
