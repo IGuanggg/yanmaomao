@@ -13,21 +13,14 @@
 const querystring = require('querystring');
 const $ = new Env();
 const timeout = 15000; //超时时间(单位毫秒)
-// =======================================gotify通知设置区域==============================================
-//gotify_url 填写gotify地址,如https://push.example.de:8080
-//gotify_token 填写gotify的消息应用token
-//gotify_priority 填写推送消息优先级,默认为0
-let GOTIFY_URL = '';
-let GOTIFY_TOKEN = '';
-let GOTIFY_PRIORITY = 0;
 // =======================================go-cqhttp通知设置区域===========================================
 //gobot_url 填写请求地址http://127.0.0.1/send_private_msg
 //gobot_token 填写在go-cqhttp文件设置的访问密钥
 //gobot_qq 填写推送到个人QQ或者QQ群号
 //go-cqhttp相关API https://docs.go-cqhttp.org/api
-let GOBOT_URL = ''; // 推送到个人QQ: http://127.0.0.1/send_private_msg  群：http://127.0.0.1/send_group_msg
+let GOBOT_URL = ''; // 推送到个人QQ: http://127.0.0.1/send_private_msg  群：http://127.0.0.1/send_group_msg 
 let GOBOT_TOKEN = ''; //访问密钥
-let GOBOT_QQ = ''; // 如果GOBOT_URL设置 /send_private_msg 则需要填入 user_id=个人QQ 相反如果是 /send_group_msg 则需要填入 group_id=QQ群
+let GOBOT_QQ = ''; // 如果GOBOT_URL设置 /send_private_msg 则需要填入 user_id=个人QQ 相反如果是 /send_group_msg 则需要填入 group_id=QQ群 
 
 // =======================================微信server酱通知设置区域===========================================
 //此处填你申请的SCKEY.
@@ -37,9 +30,6 @@ let SCKEY = '';
 // =======================================Bark App通知设置区域===========================================
 //此处填你BarkAPP的信息(IP/设备码，例如：https://api.day.app/XXXXXXXX)
 let BARK_PUSH = '';
-//BARK app推送图标,自定义推送图标(需iOS15或以上)
-let BARK_ICON =
-  'https://img.gejiba.com/images/a3f551e09ac19add4c49ec16228729c5.png';
 //BARK app推送铃声,铃声列表去APP查看复制填写
 let BARK_SOUND = '';
 //BARK app推送消息的分组, 默认为"QingLong"
@@ -94,16 +84,6 @@ let PUSH_PLUS_TOKEN = '';
 let PUSH_PLUS_USER = '';
 
 //==========================云端环境变量的判断与接收=========================
-if (process.env.GOTIFY_URL) {
-  GOTIFY_URL = process.env.GOTIFY_URL;
-}
-if (process.env.GOTIFY_TOKEN) {
-  GOTIFY_TOKEN = process.env.GOTIFY_TOKEN;
-}
-if (process.env.GOTIFY_PRIORITY) {
-  GOTIFY_PRIORITY = process.env.GOTIFY_PRIORITY;
-}
-
 if (process.env.GOBOT_URL) {
   GOBOT_URL = process.env.GOBOT_URL;
 }
@@ -135,9 +115,6 @@ if (process.env.BARK_PUSH) {
     BARK_PUSH = process.env.BARK_PUSH;
   } else {
     BARK_PUSH = `https://api.day.app/${process.env.BARK_PUSH}`;
-  }
-  if (process.env.BARK_ICON) {
-    BARK_ICON = process.env.BARK_ICON;
   }
   if (process.env.BARK_SOUND) {
     BARK_SOUND = process.env.BARK_SOUND;
@@ -205,7 +182,7 @@ async function sendNotify(
   text,
   desp,
   params = {},
-  author = '\n\n本通知 By：https://github.com/whyour/qinglong',
+  author = `\n\n本通知 By：https://github.com/yang7758258/ohhh154\n通知时间：${new Date()}`,
 ) {
   //提供6种通知
   desp += author; //增加作者信息，防止被贩卖等
@@ -222,46 +199,8 @@ async function sendNotify(
     qywxBotNotify(text, desp), //企业微信机器人
     qywxamNotify(text, desp), //企业微信应用消息推送
     iGotNotify(text, desp, params), //iGot
-    gobotNotify(text, desp), //go-cqhttp
-    gotifyNotify(text, desp), //gotify
+    gobotNotify(text, desp),//go-cqhttp
   ]);
-}
-
-function gotifyNotify(text, desp) {
-  return new Promise((resolve) => {
-    if (GOTIFY_URL && GOTIFY_TOKEN) {
-      const options = {
-        url: `${GOTIFY_URL}/message?token=${GOTIFY_TOKEN}`,
-        body: `title=${encodeURIComponent(text)}&message=${encodeURIComponent(
-          desp,
-        )}&priority=${GOTIFY_PRIORITY}`,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      };
-      $.post(options, (err, resp, data) => {
-        try {
-          if (err) {
-            console.log('gotify发送通知调用API失败！！\n');
-            console.log(err);
-          } else {
-            data = JSON.parse(data);
-            if (data.id) {
-              console.log('gotify发送通知消息成功🎉\n');
-            } else {
-              console.log(`${data.message}\n`);
-            }
-          }
-        } catch (e) {
-          $.logErr(e, resp);
-        } finally {
-          resolve();
-        }
-      });
-    } else {
-      resolve();
-    }
-  });
 }
 
 function gobotNotify(text, desp, time = 2100) {
@@ -269,7 +208,7 @@ function gobotNotify(text, desp, time = 2100) {
     if (GOBOT_URL) {
       const options = {
         url: `${GOBOT_URL}?access_token=${GOBOT_TOKEN}&${GOBOT_QQ}`,
-        json: { message: `${text}\n${desp}` },
+        json: {message:`${text}\n${desp}`},
         headers: {
           'Content-Type': 'application/json',
         },
@@ -437,9 +376,7 @@ function BarkNotify(text, desp, params = {}) {
       const options = {
         url: `${BARK_PUSH}/${encodeURIComponent(text)}/${encodeURIComponent(
           desp,
-        )}?icon=${BARK_ICON}?sound=${BARK_SOUND}&group=${BARK_GROUP}&${querystring.stringify(
-          params,
-        )}`,
+        )}?sound=${BARK_SOUND}&group=${BARK_GROUP}&${querystring.stringify(params)}`,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
