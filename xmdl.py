@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8
-'''
-项目名称: AKA-Cigma / QLscripts
-Author: AKA-Cigma
 功能：熊猫代理自动签到
 注册地址: http://www.xiongmaodaili.com?invitationCode=7875DB64-95BA-406E-85D0-F1E149100FD0
 账号#密码填到环境变量'tjblck'里，多账号&连接
