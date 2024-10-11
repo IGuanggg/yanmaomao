@@ -1,13 +1,6 @@
-//星芽免费短剧脚本
-//来自TL库：https://github.com/3288588344/toulu.git
  /*
  * 星芽免费短剧      cron 一天一次  15点前运行
  * cron: 0 0 6,12,18 * *
- 
- 
- QQ频道：https://pd.qq.com/s/672fku8ge
- 
- 
  抓包pay.whjzjx.cn域名下的device_id和authorization用#隔开
  
  以下是WxPusher通知设置
