@@ -1,12 +1,27 @@
-#百度搜索小米账号，抓包即可
+# 百度搜索小米账号，抓包即可
+# cron "30 10 * * *" script-path=xiaomi/小米钱包.py, tag=小米钱包
+# 适用: 青龙面板
+
 import os
 import time
+import random
 import requests
 import urllib3
 from datetime import datetime
 from typing import Optional, Dict, Any, Union
-import notify
+import json
+# from notify import send
+
+
+# 生成 0-15 的随机分钟延迟
+# delay_minutes = random.randint(0, 15)
+# print(f"随机延迟 {delay_minutes} 分钟")
+# time.sleep(delay_minutes * 60)  # 转换为秒并延迟
+
+
+# import sendNotify
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 class RnlRequest:
     def __init__(self, cookies: Union[str, dict]):
@@ -18,13 +33,13 @@ class RnlRequest:
         self.update_cookies(cookies)
 
     def request(
-        self,
-        method: str,
-        url: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Union[Dict[str, Any], str, bytes]] = None,
-        json: Optional[Dict[str, Any]] = None,
-        **kwargs
+            self,
+            method: str,
+            url: str,
+            params: Optional[Dict[str, Any]] = None,
+            data: Optional[Union[Dict[str, Any], str, bytes]] = None,
+            json: Optional[Dict[str, Any]] = None,
+            **kwargs
     ) -> Optional[Dict[str, Any]]:
         headers = {**self._base_headers, **kwargs.pop('headers', {})}
         try:
@@ -175,7 +190,8 @@ class RNL:
 
     def queryUserJoinListAndQueryUserGoldRichSum(self):
         try:
-            total_res = self.rr.get('https://m.jr.airstarfinance.net/mp/api/generalActivity/queryUserGoldRichSum?app=com.mipay.wallet&deviceType=2&system=1&visitEnvironment=2&userExtra={"platformType":1,"com.miui.player":"4.27.0.4","com.miui.video":"v2024090290(MiVideo-UN)","com.mipay.wallet":"6.83.0.5175.2256"}&activityCode=2211-videoWelfare')
+            total_res = self.rr.get(
+                'https://m.jr.airstarfinance.net/mp/api/generalActivity/queryUserGoldRichSum?app=com.mipay.wallet&deviceType=2&system=1&visitEnvironment=2&userExtra={"platformType":1,"com.miui.player":"4.27.0.4","com.miui.video":"v2024090290(MiVideo-UN)","com.mipay.wallet":"6.83.0.5175.2256"}&activityCode=2211-videoWelfare')
             if not total_res or total_res['code'] != 0:
                 self.error_info = f'获取兑换视频天数失败：{total_res}'
                 print(self.error_info)
@@ -192,10 +208,10 @@ class RNL:
 
             history_list = response['value']['data']
             current_date = datetime.now().strftime("%Y-%m-%d")
-            
+
             # 清空记录
             self.today_records = []
-            
+
             for a in history_list:
                 record_time = a['createTime']
                 record_date = record_time[:10]
@@ -204,7 +220,7 @@ class RNL:
                         'createTime': record_time,
                         'value': a['value']
                     })
-            
+
             return True
         except Exception as e:
             self.error_info = f'获取任务记录失败：{e}'
@@ -219,7 +235,7 @@ class RNL:
             tasks = self.get_task_list()
             if not tasks:
                 return False
-                
+
             task = tasks[0]
             try:
                 t_id = task['generalActivityUrlInfo']['id']
@@ -252,7 +268,7 @@ class RNL:
             )
 
             time.sleep(2)
-        
+
         # 重新获取最新记录
         self.queryUserJoinListAndQueryUserGoldRichSum()
         return True
@@ -276,88 +292,109 @@ def get_xiaomi_cookies(pass_token, user_id):
         return None, error_msg
 
 
-def generate_notification(account_id, rnl_instance):
+def generate_notification(account_id, rnl_instance,us):
     """生成格式化的通知消息"""
     current_date = datetime.now().strftime("%Y-%m-%d")
-    
+
     msg = f"""
 【账号信息】
-✨ 账号ID：{account_id}
+
+✨ 账号：{us} ID:{account_id}
 📊 当前兑换视频天数：{rnl_instance.total_days}
 
 📅 {current_date} 任务记录
-{"-"*40}"""
-    
+{"-" * 40}"""
+
     for record in rnl_instance.today_records:
         record_time = record["createTime"]
         days = int(record["value"]) / 100
         msg += f"""
 ⏰ {record_time}
 🎁 领到视频会员，+{days:.2f}天"""
-    
+
     if rnl_instance.error_info:
         msg += f"""
 ⚠️ 执行异常：{rnl_instance.error_info}"""
-    
+
     msg += f"""
-{"="*40}"""
-    
+{"=" * 40}"""
+
     return msg
 
 
 if __name__ == "__main__":
     # 多账号配置区 ##################################
-    ORIGINAL_COOKIES = [
-        {   # 账号1
-            'passToken': 'V1:pwROAesIuzMBPe5slLSsQq9JqH6qiUJsqu1H6E1gtYGoVDDfRMVxp54NsqEK1GD4TBGhGOUe+EyLv21Qh165IHsETSTsvK5PUvqiC6T8ftAQ86BIk0R1ooDE4ChsamlC4iQVvJyLrhCxqHXLbXepxrx5dJlt9ExVPIpiYaT5LCZ4MruEwX6P1Y3zr6qwXvdHF00FBoIGQdluKuf1TgXM4spJKbWB4DkSludfhJST8yK3IUGj0/jc9O36N6n0/eGk5ZEKQzGB4TE8HUzc2XUJvDvgH3T7HftNp1mFItQEfqbIipyP59CPwiDMbktdj+Lm1NfApMgsN4pSZsEPMUG1FQ==',
-            'userId': '140914621'
-        },
-      #  {   # 账号2
-      #     'passToken': 'xxxxxxxxxx',
-      #      'userId': 'xxxxxxxxx'
-      #  }
-        # 可继续添加更多账号...
-    ]
+    try:
+        with open("xiaomiconfig.json", "r", encoding="utf-8") as f:
+            ORIGINAL_COOKIES = json.load(f)
+        assert isinstance(ORIGINAL_COOKIES, list), "配置文件格式错误，应为账号字典列表"
+    except Exception as e:
+        print(f"读取xiaomiconfig.json失败: {e}")
+        exit(1)
     # 结束配置 ######################################
 
     # 构建完整通知消息
     full_notification = "📺【小米钱包任务执行结果】\n"
-    
+
     cookie_list = []
+    if len(ORIGINAL_COOKIES) == 0:
+        print("没有账号")
+        exit(1)
     for account in ORIGINAL_COOKIES:
-        user_id = account['userId']
-        print(f"\n>>>>>>>>>> 正在处理账号 {user_id} <<<<<<<<<<")
-        
+        data = account.get('data', {})
+        us = data.get('us')
+        owner_id = account.get('owner_id')
+        user_id = data.get('userId')
+        pass_token = data.get('passToken')
+        security_token = data.get('securityToken')
+        print(f"\n>>>>>>>>>> 正在处理账号 {us}id{user_id} <<<<<<<<<<")
+
         # 获取Cookie - 兼容原函数返回值
-        cookie_result = get_xiaomi_cookies(account['passToken'], user_id)
-        
+        cookie_result = get_xiaomi_cookies(pass_token, user_id)
+
         # 处理返回结果
         if isinstance(cookie_result, tuple):
             new_cookie, error = cookie_result
         else:
             new_cookie = cookie_result
             error = None
-        
+
         # 创建RNL实例并设置当前用户ID
         rnl = RNL(new_cookie)
         rnl.current_user_id = user_id
-        
+
         if error:
             rnl.error_info = error
         else:
-            print(f"账号 {user_id} Cookie获取成功")
+            print(f"账号 {us} Cookie获取成功")
             cookie_list.append(new_cookie)
-            
+
             # 执行主程序
             try:
                 rnl.main()
             except Exception as e:
                 rnl.error_info = f"执行异常: {str(e)}"
                 print(rnl.error_info)
-        
+
         # 生成当前账号的通知消息并添加到完整通知中
-        account_notification = generate_notification(user_id, rnl)
+        account_notification = generate_notification(user_id, rnl,us)
         full_notification += account_notification
+
+        # ========== 写入最新日志到data.log ==========
+        try:
+            with open("xiaomiconfig.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
+            for acc in config:
+                data2 = acc.get("data", {})
+                if data2.get("us") == us and acc.get("owner_id") == owner_id:
+                    if "data" not in acc or not isinstance(acc["data"], dict):
+                        acc["data"] = {}
+                    acc["data"]["log"] = account_notification.strip()
+                    break
+            with open("xiaomiconfig.json", "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"写入日志到data.log失败: {e}")
 
     # 添加汇总信息
     full_notification += f"""
@@ -370,4 +407,4 @@ if __name__ == "__main__":
     print(full_notification)
 
     # 此处可添加实际的消息推送代码
-    notify.send("小米钱包任务推送",full_notification)        
+    # send("小米钱包任务推送", full_notification)
